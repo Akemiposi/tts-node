@@ -1,16 +1,16 @@
+// ===========================
 // server.js
+// ===========================
+
+require("dotenv").config(); // .envを最初に読み込む
 
 const express = require("express");
 const cors = require("cors");
-const dotenv = require("dotenv");
-const fetch = require("node-fetch");
+const fetch = require("node-fetch"); // node-fetch v2 を使用
 const textToSpeech = require("@google-cloud/text-to-speech");
-const fs = require("fs");
 
-dotenv.config();
-
-const app = express(); // ← 一度だけに修正！
-const port = 3000;
+const app = express();
+const port = process.env.PORT || 3000; // ← Render用にPORT対応
 const client = new textToSpeech.TextToSpeechClient();
 
 app.use(cors());
@@ -18,9 +18,15 @@ app.use(express.json());
 
 const API_KEY = process.env.GOOGLE_TRANSLATE_API_KEY;
 
+// ===========================
 // 翻訳APIエンドポイント
+// ===========================
 app.post("/translate", async (req, res) => {
   const { q, target } = req.body;
+
+  if (!q || !target) {
+    return res.status(400).json({ error: "Missing 'q' or 'target'." });
+  }
 
   try {
     const response = await fetch(
@@ -28,26 +34,28 @@ app.post("/translate", async (req, res) => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          q,
-          target,
-          format: "text",
-        }),
+        body: JSON.stringify({ q, target, format: "text" }),
       }
     );
 
     const result = await response.json();
-    console.log("✅ 翻訳成功:", result); // 翻訳内容を出力
+
+    if (!result.data || !result.data.translations) {
+      throw new Error("Invalid response from Google Translate API");
+    }
+
     const translatedText = result.data.translations[0].translatedText;
+    console.log("✅ 翻訳成功:", translatedText);
     res.json({ translatedText });
   } catch (err) {
-    const message = err?.response?.statusText || err?.message || err;
-    console.error("❌ 翻訳失敗:", message, err);
+    console.error("❌ 翻訳失敗:", err.message || err);
     res.status(500).json({ error: "Translation failed." });
   }
 });
 
+// ===========================
 // 音声合成APIエンドポイント
+// ===========================
 app.get("/speak", async (req, res) => {
   const text = req.query.s;
   if (!text) return res.status(400).send("Text is required.");
@@ -63,11 +71,14 @@ app.get("/speak", async (req, res) => {
     res.set("Content-Type", "audio/mpeg");
     res.send(response.audioContent);
   } catch (err) {
-    console.error("❌ Google TTS エラー:", err);
+    console.error("❌ Google TTS エラー:", err.message || err);
     res.status(500).send("TTS failed");
   }
 });
 
+// ===========================
+// サーバー起動
+// ===========================
 app.listen(port, () => {
-  console.log(`✅ サーバー起動中: http://localhost:${port}`);
+  console.log(`✅ サーバー起動中 on port ${port}`);
 });
