@@ -2,10 +2,10 @@
   "name": "tts-node",
   "version": "1.0.0",
   "description": "Node.js app for Google TTS and translation",
-  "main": "server.js",
+  "main": "server.cjs",
   "type": "commonjs",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.cjs"
   },
   "dependencies": {
     "@google-cloud/text-to-speech": "^4.2.0",
