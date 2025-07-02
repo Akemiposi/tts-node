@@ -16,7 +16,7 @@ const client = new textToSpeech.TextToSpeechClient();
 app.use(cors());
 app.use(express.json());
 
-const API_KEY = process.env.GOOGLE_TRANSLATE_API_KEY;
+const API_KEY = process.env.GOOGLE_API_KEY;
 
 // ===========================
 // 翻訳APIエンドポイント
